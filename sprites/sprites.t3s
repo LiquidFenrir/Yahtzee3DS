@@ -1,0 +1,14 @@
+--atlas -f rgba8888 -z auto
+banner.png
+dice_1.png
+dice_2.png
+dice_3.png
+dice_4.png
+dice_5.png
+dice_6.png
+shaker.png
+corner.png
+border_top_down.png
+border_left_right.png
+button.png
+button_overlay.png
