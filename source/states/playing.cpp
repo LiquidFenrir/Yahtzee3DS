@@ -37,10 +37,45 @@ void PlayingState::update()
 {
     if(!this->shakerAnimationTime)
     {
-        if(this->selectionMode == SELECTION_MODE_DICE)
+        if(kDown & KEY_TOUCH)
+        {
+            if(this->rollButton.isPressed() && this->rollAmount < PlayingMaxRollAmount)
+            {
+                if(this->selectionMode == SELECTION_MODE_ROLL)
+                {
+                    this->rollButton.action();
+                }
+                else
+                {
+                    this->selectionMode = SELECTION_MODE_ROLL;
+                }
+            }
+
+            for(int i = PlayingMinSelectedDice; i <= PlayingMaxSelectedDice; i++)
+            {
+                int x = 64 + i*40;
+                int y = 100;
+                int size = 32;
+                if(touch.px >= x && touch.px <= x + size && touch.py >= y && touch.py <= y + size)
+                {
+                    if(this->selectedDice == i && this->selectionMode == SELECTION_MODE_DICE)
+                    {
+                        goto toggleLock;
+                    }
+                    else
+                    {
+                        this->selectedDice = i;
+                    }
+                    this->selectionMode = SELECTION_MODE_DICE;
+                    break;
+                }
+            }
+        }
+        else if(this->selectionMode == SELECTION_MODE_DICE)
         {
             if(kDown & KEY_A)
             {
+                toggleLock:
                 this->locked[this->selectedDice] = !this->locked[this->selectedDice];
             }
             else if(kDown & KEY_LEFT)
@@ -64,7 +99,7 @@ void PlayingState::update()
         {
             if(kDown & KEY_A)
             {
-                this->roll();
+                this->rollButton.action();
             }
             else if(kDown & KEY_UP)
             {
@@ -100,7 +135,7 @@ void PlayingState::roll()
     if(this->rollAmount >= PlayingMaxRollAmount)
         return;
 
-    for(int i = 0; i < diceAmount; i++)
+    for(int i = PlayingMinSelectedDice; i <= PlayingMaxSelectedDice; i++)
     {
         if(this->locked[i])
             continue;
@@ -161,7 +196,7 @@ bool PlayingState::drawShakerAnimation()
 
 void PlayingState::drawDice(bool lockedOnly)
 {
-    for(int i = 0; i < diceAmount; i++)
+    for(int i = PlayingMinSelectedDice; i <= PlayingMaxSelectedDice; i++)
     {
         float x = 64 + i*40;
         float y = 100;
