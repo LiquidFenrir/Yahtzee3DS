@@ -8,6 +8,8 @@ static constexpr float PlayingRollButtonY = 160;
 static constexpr float PlayingMinSelectedDice = 0;
 static constexpr float PlayingMaxSelectedDice = diceAmount-1;
 
+static constexpr int PlayingShakerAnimationSteps = 4;
+
 PlayingState::PlayingState(int playersAmount, getKeysType getKeys, unsigned int seed)
 {
     DEBUG("PlayingState::PlayingState\n");
@@ -130,23 +132,27 @@ bool PlayingState::drawShakerAnimation()
         u64 time = osGetTime() - this->shakerAnimationTime;
         int step = time/100;
 
-        switch(step % 4)
+        if(step > 3*PlayingShakerAnimationSteps)
         {
-            case 0:
-                x += 4;
-                break;
-            case 1:
-                x += 8;
-                break;
-            case 2:
-                x += 4;
-                break;
-            case 3:
-                break;
-        }
-
-        if(step > 12)
             this->shakerAnimationTime = 0;
+        }
+        else
+        {
+            switch(step % PlayingShakerAnimationSteps)
+            {
+                case 0:
+                    break;
+                case 1:
+                    x += 4;
+                    break;
+                case 2:
+                    x += 8;
+                    break;
+                case 3:
+                    x += 4;
+                    break;
+            }
+        }
     }
 
     C2D_DrawImageAt(C2D_SpriteSheetGetImage(spritesheet, sprites_shaker_idx), x, y, 0.5f);
