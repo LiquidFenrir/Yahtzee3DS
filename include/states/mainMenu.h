@@ -9,7 +9,7 @@ enum MainMenuButtons
     MAINMENU_BUTTONS_MULTIPLAYER,
     MAINMENU_BUTTONS_RULES,
     MAINMENU_BUTTONS_QUIT,
-    
+
     MAINMENU_BUTTONS_AMOUNT
 };
 
@@ -23,6 +23,11 @@ class MainMenuState : public State
         void draw();
 
     private:
+        void goToSingleplayerMenu();
+        void goToMultiplayerMenu();
+        void goToRulesMenu();
+        void quit();
+
         std::array<Button, MAINMENU_BUTTONS_AMOUNT> buttons;
         int selectedButton;
 };

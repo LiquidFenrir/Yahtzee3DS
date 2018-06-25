@@ -15,12 +15,12 @@ static int MainMenuMaxSelected = static_cast<int>(MAINMENU_BUTTONS_AMOUNT)-1;
 MainMenuState::MainMenuState()
 {
     DEBUG("MainMenuState::MainMenuState\n");
-    this->buttons[MAINMENU_BUTTONS_SINGLEPLAYER] = Button(MainMenuButtonsX, MainMenuButtonsY[MAINMENU_BUTTONS_SINGLEPLAYER], 0.5f, "Singleplayer", [](){ });
-    this->buttons[MAINMENU_BUTTONS_MULTIPLAYER] = Button(MainMenuButtonsX, MainMenuButtonsY[MAINMENU_BUTTONS_MULTIPLAYER], 0.5f, "Multiplayer", [](){ });
-    this->buttons[MAINMENU_BUTTONS_RULES] = Button(MainMenuButtonsX, MainMenuButtonsY[MAINMENU_BUTTONS_RULES], 0.5f, "Rules", [](){ });
-    this->buttons[MAINMENU_BUTTONS_QUIT] = Button(MainMenuButtonsX, MainMenuButtonsY[MAINMENU_BUTTONS_QUIT], 0.5f, "Quit", [](){ running = false; });
+    this->buttons[MAINMENU_BUTTONS_SINGLEPLAYER] = Button(MainMenuButtonsX, MainMenuButtonsY[MAINMENU_BUTTONS_SINGLEPLAYER], 0.5f, "Singleplayer", std::bind(&MainMenuState::goToSingleplayerMenu, this));
+    this->buttons[MAINMENU_BUTTONS_MULTIPLAYER] = Button(MainMenuButtonsX, MainMenuButtonsY[MAINMENU_BUTTONS_MULTIPLAYER], 0.5f, "Multiplayer", std::bind(&MainMenuState::goToMultiplayerMenu, this));
+    this->buttons[MAINMENU_BUTTONS_RULES] = Button(MainMenuButtonsX, MainMenuButtonsY[MAINMENU_BUTTONS_RULES], 0.5f, "Rules", std::bind(&MainMenuState::goToRulesMenu, this));
+    this->buttons[MAINMENU_BUTTONS_QUIT] = Button(MainMenuButtonsX, MainMenuButtonsY[MAINMENU_BUTTONS_QUIT], 0.5f, "Quit", std::bind(&MainMenuState::quit, this));
 
-    this->selectedButton = 0;
+    this->selectedButton = MainMenuMinSelected;
 }
 
 MainMenuState::~MainMenuState()
@@ -79,5 +79,24 @@ void MainMenuState::draw()
         button.draw();
     }
     C2D_DrawImageAt(C2D_SpriteSheetGetImage(spritesheet, sprites_button_overlay_idx), MainMenuButtonsX, MainMenuButtonsY[this->selectedButton], 0.6f);
+}
 
+void MainMenuState::goToSingleplayerMenu()
+{
+    this->nextState = new PlayingState(1, nullptr);
+}
+
+void MainMenuState::goToMultiplayerMenu()
+{
+    this->nextState = new MultiplayerState;
+}
+
+void MainMenuState::goToRulesMenu()
+{
+    // this->nextState = new RulesState;
+}
+
+void MainMenuState::quit()
+{
+    running = false;
 }

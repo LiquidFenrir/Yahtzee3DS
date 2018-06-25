@@ -1,7 +1,7 @@
 #include "game/button.h"
 #include "game/drawing.h"
 
-Button::Button(float x, float y, float z, const std::string& text, ButtonCallback callback)
+Button::Button(float x, float y, float z, const std::string& text, std::function<void()> callback)
 {
     DEBUG("Button::Button\n");
     this->x = x;
