@@ -57,11 +57,14 @@ class Player
         void setChance(diceHand diceValues);
 
         diceHand getDiceCombo(ComboType combo);
+        std::array<bool, diceAmount> getHighlightedDiceInCombo(ComboType combo);
         bool isComboCompleted(ComboType combo);
         bool isComboFailed(ComboType combo);
 
     private:
         std::array<DicePointCombo, COMBO_AMOUNT> combos;
+        std::array<std::array<bool, diceAmount>, COMBO_AMOUNT> highlightedDice;
+
         std::array<bool, COMBO_AMOUNT> completedCombos;
         std::array<bool, COMBO_AMOUNT> failedCombos;
 };

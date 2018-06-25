@@ -1,15 +1,15 @@
 #include "states/multiPlayer.h"
 #include "game/drawing.h"
 
-static float MultiplayerButtonsX = 40;
-static float MultiplayerButtonsY[MULTIPLAYER_BUTTONS_AMOUNT] = {
+static constexpr float MultiplayerButtonsX = 40;
+static constexpr float MultiplayerButtonsY[MULTIPLAYER_BUTTONS_AMOUNT] = {
     40,
     100,
     160
 };
 
-static int MultiplayerMinSelected = 0;
-static int MultiplayerMaxSelected = static_cast<int>(MULTIPLAYER_BUTTONS_AMOUNT)-1;
+static constexpr int MultiplayerMinSelected = 0;
+static constexpr int MultiplayerMaxSelected = static_cast<int>(MULTIPLAYER_BUTTONS_AMOUNT)-1;
 
 MultiplayerState::MultiplayerState()
 {

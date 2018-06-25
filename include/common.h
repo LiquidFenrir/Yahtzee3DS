@@ -10,6 +10,7 @@
 #include <tuple>
 #include <list>
 
+#include <cstdlib>
 #include <cstdio>
 
 #include <3ds.h>

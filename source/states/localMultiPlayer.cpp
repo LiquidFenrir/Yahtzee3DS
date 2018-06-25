@@ -1,16 +1,16 @@
 #include "states/localMultiPlayer.h"
 #include "game/drawing.h"
 
-static int LocalMultiplayerMinPlayers = diceMinValue;
-static int LocalMultiplayerMaxPlayers = diceMaxValue;
+static constexpr int LocalMultiplayerMinPlayers = diceMinValue;
+static constexpr int LocalMultiplayerMaxPlayers = diceMaxValue;
 
-static float diceScale = 3.0f;
+static constexpr float diceScale = 3.0f;
 
-static float diceX = (320-32*diceScale)/2;
-static float diceY = (240-32*diceScale)/2;
+static constexpr float diceX = (320-32*diceScale)/2;
+static constexpr float diceY = (240-32*diceScale)/2;
 
-static float topArrowY = diceY - 32;
-static float bottomArrowY = diceY + diceScale*32;
+static constexpr float topArrowY = diceY - 32;
+static constexpr float bottomArrowY = diceY + diceScale*32;
 
 LocalMultiplayerState::LocalMultiplayerState()
 {
@@ -30,7 +30,7 @@ void LocalMultiplayerState::update()
     {
         startPlaying:
         DEBUG("Start playing local multiplayer, players: %i\n", this->playersAmount);
-        this->nextState = new PlayingState(this->playersAmount, nullptr);
+        this->nextState = new PlayingState(this->playersAmount, nullptr, 0);
     }
     else if(kDown & KEY_DOWN)
     {

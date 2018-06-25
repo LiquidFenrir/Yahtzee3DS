@@ -1,16 +1,16 @@
 #include "states/mainMenu.h"
 #include "game/drawing.h"
 
-static float MainMenuButtonsX = 40;
-static float MainMenuButtonsY[MAINMENU_BUTTONS_AMOUNT] = {
+static constexpr float MainMenuButtonsX = 40;
+static constexpr float MainMenuButtonsY[MAINMENU_BUTTONS_AMOUNT] = {
     25,
     75,
     125,
     175,
 };
 
-static int MainMenuMinSelected = 0;
-static int MainMenuMaxSelected = static_cast<int>(MAINMENU_BUTTONS_AMOUNT)-1;
+static constexpr int MainMenuMinSelected = 0;
+static constexpr int MainMenuMaxSelected = static_cast<int>(MAINMENU_BUTTONS_AMOUNT)-1;
 
 MainMenuState::MainMenuState()
 {
@@ -83,7 +83,7 @@ void MainMenuState::draw()
 
 void MainMenuState::goToSingleplayerMenu()
 {
-    this->nextState = new PlayingState(1, nullptr);
+    this->nextState = new PlayingState(1, nullptr, 0);
 }
 
 void MainMenuState::goToMultiplayerMenu()
