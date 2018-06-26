@@ -19,7 +19,7 @@ class PlayingState : public State
 {
     public:
         PlayingState(int playersAmount, unsigned int seed);
-        PlayingState(int playersAmount, std::vector<std::string> names, getKeysType getKeys, unsigned int seed);
+        PlayingState(int playerID, std::shared_ptr<Room>& room, unsigned int seed);
         ~PlayingState();
 
         void update();
@@ -57,4 +57,6 @@ class PlayingState : public State
         size_t currentPlayer;
         std::vector<Player> players;
         getKeysType getKeys;
+        int playerID;  // ID of the player on this console
+        std::shared_ptr<Room> room;
 };

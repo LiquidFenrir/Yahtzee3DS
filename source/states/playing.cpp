@@ -1,4 +1,5 @@
 #include "states/playing.h"
+#include "game/network.h"
 #include "game/drawing.h"
 
 static constexpr int PlayingMaxRollAmount = 3;
@@ -59,7 +60,7 @@ PlayingState::PlayingState(int playersAmount, unsigned int seed)
         this->players.push_back(Player("Player " + std::to_string(i+1)));
     }
 
-    this->getKeys = nullptr;
+    this->playerID = -1;
 
     this->rollButton = Button(PlayingRollButtonX, PlayingRollButtonY, PlayingButtonZ, PlayingRollButtonTextureWidth, PlayingRollButtonTextOffset, "Roll again", std::bind(&PlayingState::roll, this));
     this->showCombos = Button(PlayingShowCombosButtonX, PlayingShowCombosButtonY, PlayingButtonZ, PlayingShowCombosButtonTextureWidth, PlayingShowCombosButtonTextOffset, "Combinations", std::bind(&PlayingState::showCombinations, this));
@@ -77,17 +78,23 @@ PlayingState::PlayingState(int playersAmount, unsigned int seed)
     this->startNewTurn();
 }
 
-PlayingState::PlayingState(int playersAmount, std::vector<std::string> names, getKeysType getKeys, unsigned int seed)
+PlayingState::PlayingState(int playerID, std::shared_ptr<Room>& room, unsigned int seed)
 {
     DEBUG("PlayingState::PlayingState\n");
-    DEBUG("Playing with %i players, multiple consoles\n", playersAmount);
 
+    std::vector<std::string> names = room->getPlayerNames();
+    int playersAmount = room->getPlayerCount();
+    
+    DEBUG("Playing with %i players, multiple consoles\n", playersAmount);
     for(int i = 0; i < playersAmount; i++)
     {
-        this->players.push_back(Player(names[i]));
+        std::string playerName = names[i];
+        DEBUG("Player %i has name %s\n", i+1, playerName.c_str());
+        this->players.push_back(Player(playerName));
     }
 
-    this->getKeys = getKeys;
+    this->playerID = playerID;
+    this->room = room;
 
     this->rollButton = Button(PlayingRollButtonX, PlayingRollButtonY, PlayingButtonZ, PlayingRollButtonTextureWidth, PlayingRollButtonTextOffset, "Roll again", std::bind(&PlayingState::roll, this));
     this->showCombos = Button(PlayingShowCombosButtonX, PlayingShowCombosButtonY, PlayingButtonZ, PlayingShowCombosButtonTextureWidth, PlayingShowCombosButtonTextOffset, "Combinations", std::bind(&PlayingState::showCombinations, this));
@@ -108,6 +115,10 @@ PlayingState::PlayingState(int playersAmount, std::vector<std::string> names, ge
 PlayingState::~PlayingState()
 {
     DEBUG("PlayingState::~PlayingState\n");
+    if(this->getKeys)
+    {
+        closeNetworkConnection();
+    }
 }
 
 void PlayingState::update()
@@ -121,8 +132,13 @@ void PlayingState::update()
     }
     else
     {
-        if(this->getKeys)
-            this->getKeys();
+        if(this->playerID != -1)
+        {
+            if(this->currentPlayer == static_cast<size_t>(this->playerID))
+                sendLocalKeys();
+            else
+                getRemotePlayerKeys();
+        }
 
         if(this->selectionMode == SELECTION_MODE_COMBO)
         {

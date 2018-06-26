@@ -20,6 +20,7 @@ Game::Game(int argc, char* argv[])
     APT_SetAppCpuTimeLimit(30);
 
     romfsInit();
+    cfguInit();
     udsInit(0x3000, NULL);
 
     gfxInitDefault();
@@ -52,6 +53,7 @@ Game::~Game()
     gfxExit();
 
     udsExit();
+    cfguExit();
     romfsExit();
 
     if(this->old_time_limit != UINT32_MAX)

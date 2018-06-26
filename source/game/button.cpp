@@ -3,7 +3,6 @@
 
 Button::Button(float x, float y, float z, float textureWidth, float centerTextOffset, const std::string& text, std::function<void()> callback)
 {
-    DEBUG("Button::Button\n");
     this->x = x;
     this->y = y;
     this->z = z;

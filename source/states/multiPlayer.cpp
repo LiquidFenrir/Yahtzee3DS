@@ -93,7 +93,7 @@ void MultiplayerState::goToLocalMenu()
 
 void MultiplayerState::goToNetworkMenu()
 {
-    // this->nextState = new NetworkMultiplayerState;
+    this->nextState = new NetworkMultiplayerState;
 }
 
 void MultiplayerState::goBack()
