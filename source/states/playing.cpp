@@ -6,9 +6,14 @@ static constexpr int PlayingMaxRollAmount = 3;
 static constexpr float PlayingButtonZ = 0.5f;
 
 static constexpr float PlayingRollButtonX = 80;
-static constexpr float PlayingRollButtonY = 160;
+static constexpr float PlayingRollButtonY = 130;
 static constexpr float PlayingRollButtonTextureWidth = 160;
 static constexpr float PlayingRollButtonTextOffset = 0;
+
+static constexpr float PlayingShowCombosButtonX = 80;
+static constexpr float PlayingShowCombosButtonY = 177;
+static constexpr float PlayingShowCombosButtonTextureWidth = 160;
+static constexpr float PlayingShowCombosButtonTextOffset = 0;
 
 static constexpr float PlayingComboSelectButtonX = 150;
 static constexpr float PlayingComboSelectButtonYStart = 42;
@@ -57,6 +62,7 @@ PlayingState::PlayingState(int playersAmount, unsigned int seed)
     this->getKeys = nullptr;
 
     this->rollButton = Button(PlayingRollButtonX, PlayingRollButtonY, PlayingButtonZ, PlayingRollButtonTextureWidth, PlayingRollButtonTextOffset, "Roll again", std::bind(&PlayingState::roll, this));
+    this->showCombos = Button(PlayingShowCombosButtonX, PlayingShowCombosButtonY, PlayingButtonZ, PlayingShowCombosButtonTextureWidth, PlayingShowCombosButtonTextOffset, "Combinations", std::bind(&PlayingState::showCombinations, this));
     for(int i = 0; i < PlayingComboViewLinesPerScreen; i++)
     {
         this->comboSelectButtons[i] = Button(PlayingComboSelectButtonX, PlayingComboSelectButtonYStart+i*40, PlayingButtonZ, PlayingComboSelectButtonTextureWidth, PlayingComboSelectButtonTextOffset, "Select", std::bind(&PlayingState::selectComboFromButton, this, i));
@@ -84,6 +90,7 @@ PlayingState::PlayingState(int playersAmount, std::vector<std::string> names, ge
     this->getKeys = getKeys;
 
     this->rollButton = Button(PlayingRollButtonX, PlayingRollButtonY, PlayingButtonZ, PlayingRollButtonTextureWidth, PlayingRollButtonTextOffset, "Roll again", std::bind(&PlayingState::roll, this));
+    this->showCombos = Button(PlayingShowCombosButtonX, PlayingShowCombosButtonY, PlayingButtonZ, PlayingShowCombosButtonTextureWidth, PlayingShowCombosButtonTextOffset, "Combinations", std::bind(&PlayingState::showCombinations, this));
     for(int i = 0; i < PlayingComboViewLinesPerScreen; i++)
     {
         this->comboSelectButtons[i] = Button(PlayingComboSelectButtonX, PlayingComboSelectButtonYStart+i*40, PlayingButtonZ, PlayingComboSelectButtonTextureWidth, PlayingComboSelectButtonTextOffset, "Select", std::bind(&PlayingState::selectComboFromButton, this, i));
@@ -191,6 +198,18 @@ void PlayingState::update()
                         }
                     }
 
+                    if(this->showCombos.isPressed())
+                    {
+                        if(this->selectionMode == SELECTION_MODE_SHOW)
+                        {
+                            this->showCombos.action();
+                        }
+                        else
+                        {
+                            this->selectionMode = SELECTION_MODE_SHOW;
+                        }
+                    }
+
                     for(int i = PlayingMinSelectedDice; i <= PlayingMaxSelectedDice; i++)
                     {
                         int x = 64 + i*40;
@@ -210,13 +229,6 @@ void PlayingState::update()
                             break;
                         }
                     }
-                }
-                else if(kDown & KEY_X)
-                {
-                    this->comboViewScroll = PlayingComboViewMinScroll;
-                    this->comboSelection = PlayingComboViewMinSelection;
-                    this->modeBeforeComboViewing = this->selectionMode;
-                    this->selectionMode = SELECTION_MODE_COMBO;
                 }
                 else if(this->selectionMode == SELECTION_MODE_DICE)
                 {
@@ -251,6 +263,21 @@ void PlayingState::update()
                     else if(kDown & KEY_UP)
                     {
                         this->selectionMode = SELECTION_MODE_DICE;
+                    }
+                    else if(kDown & KEY_DOWN)
+                    {
+                        this->selectionMode = SELECTION_MODE_SHOW;
+                    }
+                }
+                else if(this->selectionMode == SELECTION_MODE_SHOW)
+                {
+                    if(kDown & KEY_A)
+                    {
+                        this->showCombos.action();
+                    }
+                    else if(kDown & KEY_UP)
+                    {
+                        this->selectionMode = SELECTION_MODE_ROLL;
                     }
                 }
             }
@@ -375,6 +402,10 @@ void PlayingState::draw()
             this->rollButton.draw();
             if(this->selectionMode == SELECTION_MODE_ROLL)
                 this->rollButton.drawOverlay();
+
+            this->showCombos.draw();
+            if(this->selectionMode == SELECTION_MODE_SHOW)
+                this->showCombos.drawOverlay();
         }
     }
 }
@@ -455,7 +486,7 @@ void PlayingState::startNewTurn()
 bool PlayingState::drawShakerAnimation()
 {
     float x = 32;
-    float y = 32;
+    float y = 24;
     if(this->shakerAnimationTime)
     {
         u64 time = osGetTime() - this->shakerAnimationTime;
@@ -493,7 +524,7 @@ void PlayingState::drawDice(bool lockedOnly)
     for(int i = PlayingMinSelectedDice; i <= PlayingMaxSelectedDice; i++)
     {
         float x = 64 + i*40;
-        float y = 100;
+        float y = 86;
         if((lockedOnly && this->locked[i]) || !lockedOnly)
             C2D_DrawImageAt(C2D_SpriteSheetGetImage(spritesheet, sprites_dice_1_idx+hand[i]-1), x, y, 0.5f);
 
@@ -522,4 +553,12 @@ void PlayingState::selectCombo(ComboType type)
         player.setCombo(type, this->hand);
         this->startNewTurn();
     }
+}
+
+void PlayingState::showCombinations()
+{
+    this->comboViewScroll = PlayingComboViewMinScroll;
+    this->comboSelection = PlayingComboViewMinSelection;
+    this->modeBeforeComboViewing = this->selectionMode;
+    this->selectionMode = SELECTION_MODE_COMBO;
 }

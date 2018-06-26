@@ -11,6 +11,7 @@ enum SelectionMode
 {
     SELECTION_MODE_DICE,
     SELECTION_MODE_ROLL,
+    SELECTION_MODE_SHOW,
     SELECTION_MODE_COMBO,
 };
 
@@ -31,6 +32,8 @@ class PlayingState : public State
         bool drawShakerAnimation();
         void drawDice(bool lockedOnly);
 
+        void showCombinations();
+
         SelectionMode selectionMode;
         SelectionMode modeBeforeComboViewing;
         int selectedDice;
@@ -39,7 +42,7 @@ class PlayingState : public State
         int rollAmount;
 
         u64 shakerAnimationTime;
-        Button rollButton;
+        Button rollButton, showCombos;
         std::array<Button, PlayingComboViewLinesPerScreen> comboSelectButtons;
         void selectComboFromButton(int buttonID);
         void selectCombo(ComboType type);
