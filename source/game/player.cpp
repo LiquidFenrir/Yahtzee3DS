@@ -1,8 +1,20 @@
 #include "game/player.h"
 
-Player::Player()
+Player::Player(const std::string& name)
 {
+    this->name = name;
+    for(int i = 0; i < COMBO_AMOUNT; i++)
+    {
+        this->combos[i].points = 0;
+        for(int j = 0; j < diceAmount; j++)
+        {
+            this->combos[i].combo[j] = 0;
+            this->highlightedDice[i][j] = false;
+        }
 
+        this->completedCombos[i] = false;
+        this->failedCombos[i] = false;
+    }
 }
 
 Player::~Player()
@@ -10,6 +22,10 @@ Player::~Player()
 
 }
 
+std::string Player::getName()
+{
+    return this->name;
+}
 int Player::getTotalPoints()
 {
     int points = 0;
@@ -19,14 +35,45 @@ int Player::getTotalPoints()
     }
     return points;
 }
+bool Player::hasFinished()
+{
+    for(auto& completed : this->completedCombos)
+    {
+        if(!completed)
+            return false;
+    }
+
+    return true;
+}
+
+void Player::setCombo(ComboType type, diceHand hand)
+{
+    void (Player::* functions[COMBO_AMOUNT])(diceHand) = {
+        &Player::setAces,
+        &Player::setTwos,
+        &Player::setThrees,
+        &Player::setFours,
+        &Player::setFives,
+        &Player::setSixes,
+
+        &Player::setThreeOfAKind,
+        &Player::setFourOfAKind,
+        &Player::setFullHouse,
+        &Player::setSmallStraight,
+        &Player::setLargeStraight,
+        &Player::setYathzee,
+
+        &Player::setChance,
+    };
+    (this->*(functions[type]))(hand);
+
+    this->combos[type].combo = hand;
+    this->completedCombos[type] = true;
+}
 
 
 void Player::setSingleType(diceHand diceValues, ComboType type)
 {
-    DicePointCombo* combo = &this->combos[type];
-    combo->combo = diceValues;
-    this->completedCombos[type] = true;
-
     int target = static_cast<int>(type)+1; // Enum starts at 0, so +1 is needed to bring back to valid dice range [1; 6]
     int count = std::count(diceValues.begin(), diceValues.end(), target);
 
@@ -37,7 +84,7 @@ void Player::setSingleType(diceHand diceValues, ComboType type)
     }
     else
     {
-        combo->points = count*target;
+        this->combos[type].points = count*target;
     }
 }
 
@@ -75,9 +122,6 @@ void Player::setSixes(diceHand diceValues)
 
 void Player::setThreeOfAKind(diceHand diceValues)
 {
-    this->combos[COMBO_THREE_OF_A_KIND].combo = diceValues;
-    this->completedCombos[COMBO_THREE_OF_A_KIND] = true;
-
     for(int target = diceMinValue; target <= diceMaxValue; target++)
     {
         int count = std::count(diceValues.begin(), diceValues.end(), target);
@@ -94,9 +138,6 @@ void Player::setThreeOfAKind(diceHand diceValues)
 
 void Player::setFourOfAKind(diceHand diceValues)
 {
-    this->combos[COMBO_FOUR_OF_A_KIND].combo = diceValues;
-    this->completedCombos[COMBO_FOUR_OF_A_KIND] = true;
-
     for(int target = diceMinValue; target <= diceMaxValue; target++)
     {
         int count = std::count(diceValues.begin(), diceValues.end(), target);
@@ -113,9 +154,6 @@ void Player::setFourOfAKind(diceHand diceValues)
 
 void Player::setFullHouse(diceHand diceValues)
 {
-    this->combos[COMBO_FULL_HOUSE].combo = diceValues;
-    this->completedCombos[COMBO_FULL_HOUSE] = true;
-
     int pair = 0, triple = 0;
     for(int target = diceMinValue; target <= diceMaxValue; target++)
     {
@@ -142,9 +180,6 @@ void Player::setFullHouse(diceHand diceValues)
 
 void Player::setSmallStraight(diceHand diceValues)
 {
-    this->combos[COMBO_SMALL_STRAIGHT].combo = diceValues;
-    this->completedCombos[COMBO_SMALL_STRAIGHT] = true;
-
     for(int target = diceMinValue; target <= diceMaxValue-1; target++)
     {
         int count = std::count(diceValues.begin(), diceValues.end(), target);
@@ -160,9 +195,6 @@ void Player::setSmallStraight(diceHand diceValues)
 
 void Player::setLargeStraight(diceHand diceValues)
 {
-    this->combos[COMBO_LARGE_STRAIGHT].combo = diceValues;
-    this->completedCombos[COMBO_LARGE_STRAIGHT] = true;
-
     for(int target = diceMinValue+1; target <= diceMaxValue; target++)
     {
         int count = std::count(diceValues.begin(), diceValues.end(), target);
@@ -178,9 +210,6 @@ void Player::setLargeStraight(diceHand diceValues)
 
 void Player::setYathzee(diceHand diceValues)
 {
-    this->combos[COMBO_YAHTZEE].combo = diceValues;
-    this->completedCombos[COMBO_YAHTZEE] = true;
-
     for(int target = diceMinValue; target <= diceMaxValue; target++)
     {
         int count = std::count(diceValues.begin(), diceValues.end(), target);
@@ -197,9 +226,7 @@ void Player::setYathzee(diceHand diceValues)
 
 void Player::setChance(diceHand diceValues)
 {
-    this->combos[COMBO_CHANCE].combo = diceValues;
     this->combos[COMBO_CHANCE].points = std::accumulate(diceValues.begin(), diceValues.end(), 0);
-    this->completedCombos[COMBO_CHANCE] = true;
 }
 
 

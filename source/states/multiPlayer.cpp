@@ -1,7 +1,10 @@
 #include "states/multiPlayer.h"
 #include "game/drawing.h"
 
-static constexpr float MultiplayerButtonsX = 40;
+static constexpr float MultiplayerButtonsX = 60;
+static constexpr float MultiplayerButtonsTextureWidth = 200;
+static constexpr float MultiplayerButtonsZ = 0.5f;
+static constexpr float MultiplayerButtonsTextOffset = 0;
 static constexpr float MultiplayerButtonsY[MULTIPLAYER_BUTTONS_AMOUNT] = {
     40,
     100,
@@ -14,9 +17,9 @@ static constexpr int MultiplayerMaxSelected = static_cast<int>(MULTIPLAYER_BUTTO
 MultiplayerState::MultiplayerState()
 {
     DEBUG("MultiplayerState::MultiplayerState\n");
-    this->buttons[MULTIPLAYER_BUTTONS_LOCAL] = Button(MultiplayerButtonsX, MultiplayerButtonsY[MULTIPLAYER_BUTTONS_LOCAL], 0.5f, "Single console", std::bind(&MultiplayerState::goToLocalMenu, this));
-    this->buttons[MULTIPLAYER_BUTTONS_NETWORK] = Button(MultiplayerButtonsX, MultiplayerButtonsY[MULTIPLAYER_BUTTONS_NETWORK], 0.5f, "Multiple consoles", std::bind(&MultiplayerState::goToNetworkMenu, this));
-    this->buttons[MULTIPLAYER_BUTTONS_BACK] = Button(MultiplayerButtonsX, MultiplayerButtonsY[MULTIPLAYER_BUTTONS_BACK], 0.5f, "Back", std::bind(&MultiplayerState::goBack, this));
+    this->buttons[MULTIPLAYER_BUTTONS_LOCAL] = Button(MultiplayerButtonsX, MultiplayerButtonsY[MULTIPLAYER_BUTTONS_LOCAL], MultiplayerButtonsZ, MultiplayerButtonsTextureWidth, MultiplayerButtonsTextOffset, "Single console", std::bind(&MultiplayerState::goToLocalMenu, this));
+    this->buttons[MULTIPLAYER_BUTTONS_NETWORK] = Button(MultiplayerButtonsX, MultiplayerButtonsY[MULTIPLAYER_BUTTONS_NETWORK], MultiplayerButtonsZ, MultiplayerButtonsTextureWidth, MultiplayerButtonsTextOffset, "Multiple consoles", std::bind(&MultiplayerState::goToNetworkMenu, this));
+    this->buttons[MULTIPLAYER_BUTTONS_BACK] = Button(MultiplayerButtonsX, MultiplayerButtonsY[MULTIPLAYER_BUTTONS_BACK], MultiplayerButtonsZ, MultiplayerButtonsTextureWidth, MultiplayerButtonsTextOffset, "Back", std::bind(&MultiplayerState::goBack, this));
     this->selectedButton = MultiplayerMinSelected;
 }
 
@@ -75,11 +78,12 @@ void MultiplayerState::update()
 
 void MultiplayerState::draw()
 {
-    for(auto& button : this->buttons)
+    for(size_t i = 0; i < this->buttons.size(); i++)
     {
-        button.draw();
+        this->buttons[i].draw();
+        if(i == static_cast<size_t>(this->selectedButton))
+            this->buttons[i].drawOverlay();
     }
-    C2D_DrawImageAt(C2D_SpriteSheetGetImage(spritesheet, sprites_button_overlay_idx), MultiplayerButtonsX, MultiplayerButtonsY[this->selectedButton], 0.6f);
 }
 
 void MultiplayerState::goToLocalMenu()

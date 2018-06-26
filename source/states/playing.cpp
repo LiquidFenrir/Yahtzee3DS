@@ -2,27 +2,97 @@
 #include "game/drawing.h"
 
 static constexpr int PlayingMaxRollAmount = 3;
-static constexpr float PlayingRollButtonX = 40;
+
+static constexpr float PlayingButtonZ = 0.5f;
+
+static constexpr float PlayingRollButtonX = 80;
 static constexpr float PlayingRollButtonY = 160;
+static constexpr float PlayingRollButtonTextureWidth = 160;
+static constexpr float PlayingRollButtonTextOffset = 0;
+
+static constexpr float PlayingComboSelectButtonX = 150;
+static constexpr float PlayingComboSelectButtonYStart = 42;
+static constexpr float PlayingComboSelectButtonTextureWidth = 140;
+static constexpr float PlayingComboSelectButtonTextOffset = 60;
+
 
 static constexpr float PlayingMinSelectedDice = 0;
 static constexpr float PlayingMaxSelectedDice = diceAmount-1;
 
-static constexpr int PlayingShakerAnimationSteps = 4;
+static constexpr int PlayingComboViewMinScroll = 0;
+static constexpr int PlayingComboViewMaxScroll = COMBO_AMOUNT-PlayingComboViewLinesPerScreen;
 
-PlayingState::PlayingState(int playersAmount, getKeysType getKeys, unsigned int seed)
+static constexpr int PlayingComboViewMinSelection = 0;
+static constexpr int PlayingComboViewMaxSelection = COMBO_AMOUNT-1;
+
+static constexpr int PlayingShakerAnimationSteps = 4;
+static const std::string comboViewName[COMBO_AMOUNT] = {
+    "Aces:",
+    "Twos:",
+    "Threes:",
+    "Fours:",
+    "Fives:",
+    "Sixes:",
+
+    "Three of a kind:",
+    "Four of a kind:",
+    "Full House:",
+    "Small Straight:",
+    "Large Straight:",
+    "Yahtzee:",
+
+    "Chance:",
+};
+
+PlayingState::PlayingState(int playersAmount, unsigned int seed)
 {
     DEBUG("PlayingState::PlayingState\n");
-    DEBUG("Playing with %i players\n", playersAmount);
+    DEBUG("Playing with %i players, single console\n", playersAmount);
 
     for(int i = 0; i < playersAmount; i++)
     {
-        this->players.push_back(Player());
+        this->players.push_back(Player("Player " + std::to_string(i+1)));
+    }
+
+    this->getKeys = nullptr;
+
+    this->rollButton = Button(PlayingRollButtonX, PlayingRollButtonY, PlayingButtonZ, PlayingRollButtonTextureWidth, PlayingRollButtonTextOffset, "Roll again", std::bind(&PlayingState::roll, this));
+    for(int i = 0; i < PlayingComboViewLinesPerScreen; i++)
+    {
+        this->comboSelectButtons[i] = Button(PlayingComboSelectButtonX, PlayingComboSelectButtonYStart+i*40, PlayingButtonZ, PlayingComboSelectButtonTextureWidth, PlayingComboSelectButtonTextOffset, "Select", std::bind(&PlayingState::selectComboFromButton, this, i));
+    }
+
+    this->currentPlayer = -1;
+    this->comboViewScroll = PlayingComboViewMinScroll;
+    this->comboSelection = PlayingComboViewMinSelection;
+    this->gameComplete = false;
+
+    srand(seed);
+    this->startNewTurn();
+}
+
+PlayingState::PlayingState(int playersAmount, std::vector<std::string> names, getKeysType getKeys, unsigned int seed)
+{
+    DEBUG("PlayingState::PlayingState\n");
+    DEBUG("Playing with %i players, multiple consoles\n", playersAmount);
+
+    for(int i = 0; i < playersAmount; i++)
+    {
+        this->players.push_back(Player(names[i]));
     }
 
     this->getKeys = getKeys;
 
-    this->rollButton = Button(PlayingRollButtonX, PlayingRollButtonY, 0.5f, "Roll again", std::bind(&PlayingState::roll, this));
+    this->rollButton = Button(PlayingRollButtonX, PlayingRollButtonY, PlayingButtonZ, PlayingRollButtonTextureWidth, PlayingRollButtonTextOffset, "Roll again", std::bind(&PlayingState::roll, this));
+    for(int i = 0; i < PlayingComboViewLinesPerScreen; i++)
+    {
+        this->comboSelectButtons[i] = Button(PlayingComboSelectButtonX, PlayingComboSelectButtonYStart+i*40, PlayingButtonZ, PlayingComboSelectButtonTextureWidth, PlayingComboSelectButtonTextOffset, "Select", std::bind(&PlayingState::selectComboFromButton, this, i));
+    }
+
+    this->currentPlayer = -1;
+    this->comboViewScroll = PlayingComboViewMinScroll;
+    this->comboSelection = PlayingComboViewMinSelection;
+    this->gameComplete = false;
 
     srand(seed);
     this->startNewTurn();
@@ -35,75 +105,154 @@ PlayingState::~PlayingState()
 
 void PlayingState::update()
 {
-    if(!this->shakerAnimationTime)
+    if(this->gameComplete)
     {
-        if(kDown & KEY_TOUCH)
+        if(kDown & KEY_B)
         {
-            if(this->rollButton.isPressed() && this->rollAmount < PlayingMaxRollAmount)
-            {
-                if(this->selectionMode == SELECTION_MODE_ROLL)
-                {
-                    this->rollButton.action();
-                }
-                else
-                {
-                    this->selectionMode = SELECTION_MODE_ROLL;
-                }
-            }
+            this->nextState = new MainMenuState;
+        }
+    }
+    else
+    {
+        if(this->getKeys)
+            this->getKeys();
 
-            for(int i = PlayingMinSelectedDice; i <= PlayingMaxSelectedDice; i++)
-            {
-                int x = 64 + i*40;
-                int y = 100;
-                int size = 32;
-                if(touch.px >= x && touch.px <= x + size && touch.py >= y && touch.py <= y + size)
+        if(this->selectionMode == SELECTION_MODE_COMBO)
+        {
+            if(kDown & KEY_DOWN)
+            {   
+                this->comboSelection++;
+                if(this->comboSelection > PlayingComboViewMaxSelection)
+                    this->comboSelection = PlayingComboViewMaxSelection;
+
+                if(this->comboViewScroll+this->comboSelection >= PlayingComboViewLinesPerScreen && this->comboSelection == this->comboViewScroll+PlayingComboViewLinesPerScreen)
                 {
-                    if(this->selectedDice == i && this->selectionMode == SELECTION_MODE_DICE)
-                    {
-                        goto toggleLock;
-                    }
-                    else
-                    {
-                        this->selectedDice = i;
-                    }
-                    this->selectionMode = SELECTION_MODE_DICE;
-                    break;
+                    this->comboViewScroll++;
+                    if(this->comboViewScroll > PlayingComboViewMaxScroll)
+                        this->comboViewScroll = PlayingComboViewMaxScroll;
                 }
-            }
-        }
-        else if(this->selectionMode == SELECTION_MODE_DICE)
-        {
-            if(kDown & KEY_A)
-            {
-                toggleLock:
-                this->locked[this->selectedDice] = !this->locked[this->selectedDice];
-            }
-            else if(kDown & KEY_LEFT)
-            {
-                this->selectedDice--;
-                if(this->selectedDice < PlayingMinSelectedDice)
-                    this->selectedDice = PlayingMaxSelectedDice;
-            }
-            else if(kDown & KEY_RIGHT)
-            {
-                this->selectedDice++;
-                if(this->selectedDice > PlayingMaxSelectedDice)
-                    this->selectedDice = PlayingMinSelectedDice;
-            }
-            else if(kDown & KEY_DOWN && this->rollAmount < PlayingMaxRollAmount)
-            {
-                this->selectionMode = SELECTION_MODE_ROLL;
-            }
-        }
-        else if(this->selectionMode == SELECTION_MODE_ROLL)
-        {
-            if(kDown & KEY_A)
-            {
-                this->rollButton.action();
             }
             else if(kDown & KEY_UP)
             {
-                this->selectionMode = SELECTION_MODE_DICE;
+                this->comboSelection--;
+                if(this->comboSelection < PlayingComboViewMinSelection)
+                    this->comboSelection = PlayingComboViewMinSelection;
+
+                if(this->comboViewScroll > PlayingComboViewMinScroll && this->comboSelection == this->comboViewScroll-1)
+                {
+                    this->comboViewScroll--;
+                    if(this->comboViewScroll < PlayingComboViewMinScroll)
+                        this->comboViewScroll = PlayingComboViewMinScroll;
+                }
+            }
+            else if(kDown & KEY_B)
+            {
+                this->selectionMode = this->modeBeforeComboViewing;
+            }
+            else if(kDown & KEY_A)
+            {
+                ComboType type = static_cast<ComboType>(this->comboSelection);
+                this->selectCombo(type);
+            }
+            if(kDown & KEY_TOUCH)
+            {
+                for(int i = this->comboViewScroll; i < this->comboViewScroll+PlayingComboViewLinesPerScreen; i++)
+                {
+                    auto& button = this->comboSelectButtons[i];
+                    if(button.isPressed())
+                    {
+                        if(i == this->comboSelection)
+                        {
+                            button.action();
+                        }
+                        else
+                        {
+                            this->comboSelection = i;
+                        }
+                    }
+                }
+            }
+        }
+        else
+        {
+            if(!this->shakerAnimationTime)
+            {
+                if(kDown & KEY_TOUCH)
+                {
+                    if(this->rollButton.isPressed() && this->rollAmount < PlayingMaxRollAmount)
+                    {
+                        if(this->selectionMode == SELECTION_MODE_ROLL)
+                        {
+                            this->rollButton.action();
+                        }
+                        else
+                        {
+                            this->selectionMode = SELECTION_MODE_ROLL;
+                        }
+                    }
+
+                    for(int i = PlayingMinSelectedDice; i <= PlayingMaxSelectedDice; i++)
+                    {
+                        int x = 64 + i*40;
+                        int y = 100;
+                        int size = 32;
+                        if(touch.px >= x && touch.px <= x + size && touch.py >= y && touch.py <= y + size)
+                        {
+                            if(this->selectedDice == i && this->selectionMode == SELECTION_MODE_DICE)
+                            {
+                                goto toggleLock;
+                            }
+                            else
+                            {
+                                this->selectedDice = i;
+                            }
+                            this->selectionMode = SELECTION_MODE_DICE;
+                            break;
+                        }
+                    }
+                }
+                else if(kDown & KEY_X)
+                {
+                    this->comboViewScroll = PlayingComboViewMinScroll;
+                    this->comboSelection = PlayingComboViewMinSelection;
+                    this->modeBeforeComboViewing = this->selectionMode;
+                    this->selectionMode = SELECTION_MODE_COMBO;
+                }
+                else if(this->selectionMode == SELECTION_MODE_DICE)
+                {
+                    if(kDown & KEY_A)
+                    {
+                        toggleLock:
+                        this->locked[this->selectedDice] = !this->locked[this->selectedDice];
+                    }
+                    else if(kDown & KEY_LEFT)
+                    {
+                        this->selectedDice--;
+                        if(this->selectedDice < PlayingMinSelectedDice)
+                            this->selectedDice = PlayingMaxSelectedDice;
+                    }
+                    else if(kDown & KEY_RIGHT)
+                    {
+                        this->selectedDice++;
+                        if(this->selectedDice > PlayingMaxSelectedDice)
+                            this->selectedDice = PlayingMinSelectedDice;
+                    }
+                    else if(kDown & KEY_DOWN && this->rollAmount < PlayingMaxRollAmount)
+                    {
+                        this->selectionMode = SELECTION_MODE_ROLL;
+                    }
+                }
+                else if(this->selectionMode == SELECTION_MODE_ROLL)
+                {
+                    if(kDown & KEY_A)
+                    {
+                        this->rollButton.action();
+                    }
+                    else if(kDown & KEY_UP)
+                    {
+                        this->selectionMode = SELECTION_MODE_DICE;
+                    }
+                }
             }
         }
     }
@@ -111,11 +260,113 @@ void PlayingState::update()
 
 void PlayingState::draw()
 {
-    // if(this->viewingCombos)
-    // {
-        // this->players[this->selectedPlayer].displayCombosAndScore();
-    // }
-    // else
+    static float textScale = 0.6f;
+    if(this->gameComplete)
+    {
+        C2D_Text congratulations, winnerText, pointsText, pressB;
+        char withPoints[128] = {0};
+        snprintf(withPoints, 127, "With %i points", this->winnerPoints);
+
+        C2D_TextParse(&congratulations, dynamicBuf, "Congratulations!");
+        C2D_TextOptimize(&congratulations);
+
+        C2D_TextParse(&pointsText, dynamicBuf, withPoints);
+        C2D_TextOptimize(&pointsText);
+
+        C2D_TextParse(&winnerText, dynamicBuf, this->winner.c_str());
+        C2D_TextOptimize(&winnerText);
+
+        C2D_TextParse(&pressB, dynamicBuf, "Press \uE001 to go back.");
+        C2D_TextOptimize(&pressB);
+
+        float width = 0, height = 0;
+        C2D_TextGetDimensions(&congratulations, 1.0f, 1.0f, &width, &height);
+        float offset = (320/2 - width/2);
+
+        float y = 24;
+        C2D_DrawText(&congratulations, C2D_WithColor, offset, y, 0.5f, 1.0f, 1.0f, textColor);
+        y += height*2 + 5;
+
+        C2D_TextGetDimensions(&winnerText, textScale, textScale, &width, &height);
+        offset = (320/2 - width/2);
+        C2D_DrawText(&winnerText, C2D_WithColor, offset, y, 0.5f, textScale, textScale, textColor);
+        y += height + 5;
+
+        C2D_TextGetDimensions(&pointsText, textScale, textScale, &width, &height);
+        offset = (320/2 - width/2);
+        C2D_DrawText(&pointsText, C2D_WithColor, offset, y, 0.5f, textScale, textScale, textColor);
+        y += height*2 + 5;
+ 
+        C2D_TextGetDimensions(&pressB, textScale, textScale, &width, nullptr);
+        offset = (320/2 - width/2);
+        C2D_DrawText(&pressB, C2D_WithColor, offset, y, 0.5f, textScale, textScale, textColor);
+    }
+    else if(this->selectionMode == SELECTION_MODE_COMBO)
+    {
+        // Display combos and score
+        auto& player = this->players[this->currentPlayer];
+
+        C2D_Text playerText;
+        std::string name = player.getName();
+        int points = player.getTotalPoints();
+
+        char playerWithPoints[128] = {0};
+        snprintf(playerWithPoints, 127, "%s: %i points", name.c_str(), points);
+
+        C2D_TextParse(&playerText, dynamicBuf, playerWithPoints);
+        C2D_TextOptimize(&playerText);
+
+        float width = 0;
+        C2D_TextGetDimensions(&playerText, textScale, textScale, &width, nullptr);
+        float offset = (320/2 - width/2);
+
+        C2D_DrawText(&playerText, C2D_WithColor, offset, 20, 0.5f, textScale, textScale, blackColor);
+
+        for(int i = this->comboViewScroll; i < this->comboViewScroll+PlayingComboViewLinesPerScreen; i++)
+        {
+            int cleanI = i-this->comboViewScroll;
+            float y = 52 + cleanI*40;
+
+            C2D_Text text;
+            C2D_TextParse(&text, dynamicBuf, comboViewName[i].c_str());
+            C2D_TextOptimize(&text);
+
+            ComboType type = static_cast<ComboType>(i);
+            diceHand combo = player.getDiceCombo(type);
+            bool completed = player.isComboCompleted(type);
+            bool failed = player.isComboFailed(type);
+
+            bool drawDice = false;
+            u32 color = blackColor;
+            if(failed)
+            {
+                drawDice = true;
+                color = failedTextColor;
+            }
+            else if(completed)
+            {
+                drawDice = true;
+                color = greyedOutTextColor;
+            }
+
+            C2D_DrawText(&text, C2D_WithColor, 24, y, 0.4f, textScale, textScale, color);
+            if(drawDice)
+            {
+                for(int j = PlayingMinSelectedDice; j <= PlayingMaxSelectedDice; j++)
+                {
+                    float x = 140 + j*32;
+                    C2D_DrawImageAt(C2D_SpriteSheetGetImage(spritesheet, sprites_dice_1_idx+combo[j]-1), x, y-8, 0.5f);
+                }
+            }
+            else
+            {
+                this->comboSelectButtons[cleanI].draw();
+                if(cleanI == this->comboSelection-this->comboViewScroll)
+                    this->comboSelectButtons[cleanI].drawOverlay();
+            }
+        }
+    }
+    else
     {
         this->drawDice(this->drawShakerAnimation());  // draw the unlocked dice as missing during the shaker animation 
 
@@ -123,9 +374,7 @@ void PlayingState::draw()
         {
             this->rollButton.draw();
             if(this->selectionMode == SELECTION_MODE_ROLL)
-            {
-                C2D_DrawImageAt(C2D_SpriteSheetGetImage(spritesheet, sprites_button_overlay_idx), PlayingRollButtonX, PlayingRollButtonY, 0.6f);
-            }
+                this->rollButton.drawOverlay();
         }
     }
 }
@@ -151,8 +400,53 @@ void PlayingState::roll()
 
 void PlayingState::startNewTurn()
 {
+    bool everyoneFinished = true;
+    std::string winnerName;
+    int highestPoints = -1;
+
+    for(auto& player : this->players)
+    {
+        if(!player.hasFinished())
+        {
+            everyoneFinished = false;
+            break;
+        }
+        else
+        {
+            int playerPoints = player.getTotalPoints();
+            if(playerPoints > highestPoints)
+            {
+                winnerName = "The winner is: " + player.getName();
+                highestPoints = playerPoints;
+            }
+            else if(playerPoints == highestPoints)
+            {
+                std::string tieBetween = "Tie between: ";
+                std::string appended = " and " + player.getName();
+                if(winnerName.compare(tieBetween))  // If winnerName doesnt start with tieBetween
+                {
+                    winnerName = tieBetween + winnerName.substr(15);
+                }
+                winnerName += appended;
+            }
+        }
+    }
+
+    if(everyoneFinished)
+    {
+        this->gameComplete = true;
+        this->winner = winnerName;
+        this->winnerPoints = highestPoints;
+        return;
+    }
+
     for(int i = 0; i < diceAmount; i++)
         this->locked[i] = false;
+
+    do {
+        this->currentPlayer++;
+        this->currentPlayer %= this->players.size();
+    } while(this->players[this->currentPlayer].hasFinished());
 
     this->rollAmount = 0;
     this->roll();
@@ -211,5 +505,21 @@ void PlayingState::drawDice(bool lockedOnly)
             if(this->selectionMode == SELECTION_MODE_DICE && i == this->selectedDice)
                 C2D_DrawImageAt(C2D_SpriteSheetGetImage(spritesheet, sprites_dice_selected_idx), x, y, 0.7f);
         }
+    }
+}
+
+void PlayingState::selectComboFromButton(int buttonID)
+{
+    ComboType actualCombo = static_cast<ComboType>(buttonID+this->comboViewScroll);
+    this->selectCombo(actualCombo);
+}
+
+void PlayingState::selectCombo(ComboType type)
+{
+    auto& player = this->players[this->currentPlayer];
+    if(!player.isComboCompleted(type))
+    {
+        player.setCombo(type, this->hand);
+        this->startNewTurn();
     }
 }

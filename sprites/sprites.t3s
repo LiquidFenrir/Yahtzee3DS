@@ -12,6 +12,8 @@ shaker.png
 corner.png
 border_top_down.png
 border_left_right.png
-button.png
-button_overlay.png
+button_end.png
+button_body.png
+button_overlay_end.png
+button_overlay_body.png
 arrow.png

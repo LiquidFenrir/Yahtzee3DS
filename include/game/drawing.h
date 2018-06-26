@@ -9,6 +9,7 @@ constexpr u32 blackColor = C2D_Color32f(0,0,0,1); // Black
 constexpr u32 whiteColor = C2D_Color32f(1,1,1,1); // White
 constexpr u32 textColor = whiteColor;
 constexpr u32 greyedOutTextColor = C2D_Color32f(0.8f,0.8f,0.8f,1);
+constexpr u32 failedTextColor = C2D_Color32f(1,0,0,1);
 
 void drawTopBanner();
 void drawBottomField();

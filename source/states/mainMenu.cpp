@@ -1,7 +1,10 @@
 #include "states/mainMenu.h"
 #include "game/drawing.h"
 
-static constexpr float MainMenuButtonsX = 40;
+static constexpr float MainMenuButtonsX = 60;
+static constexpr float MainMenuButtonsTextureWidth = 200;
+static constexpr float MainMenuButtonsZ = 0.5f;
+static constexpr float MainMenuButtonsTextOffset = 0;
 static constexpr float MainMenuButtonsY[MAINMENU_BUTTONS_AMOUNT] = {
     25,
     75,
@@ -15,10 +18,10 @@ static constexpr int MainMenuMaxSelected = static_cast<int>(MAINMENU_BUTTONS_AMO
 MainMenuState::MainMenuState()
 {
     DEBUG("MainMenuState::MainMenuState\n");
-    this->buttons[MAINMENU_BUTTONS_SINGLEPLAYER] = Button(MainMenuButtonsX, MainMenuButtonsY[MAINMENU_BUTTONS_SINGLEPLAYER], 0.5f, "Singleplayer", std::bind(&MainMenuState::goToSingleplayerMenu, this));
-    this->buttons[MAINMENU_BUTTONS_MULTIPLAYER] = Button(MainMenuButtonsX, MainMenuButtonsY[MAINMENU_BUTTONS_MULTIPLAYER], 0.5f, "Multiplayer", std::bind(&MainMenuState::goToMultiplayerMenu, this));
-    this->buttons[MAINMENU_BUTTONS_RULES] = Button(MainMenuButtonsX, MainMenuButtonsY[MAINMENU_BUTTONS_RULES], 0.5f, "Rules", std::bind(&MainMenuState::goToRulesMenu, this));
-    this->buttons[MAINMENU_BUTTONS_QUIT] = Button(MainMenuButtonsX, MainMenuButtonsY[MAINMENU_BUTTONS_QUIT], 0.5f, "Quit", std::bind(&MainMenuState::quit, this));
+    this->buttons[MAINMENU_BUTTONS_SINGLEPLAYER] = Button(MainMenuButtonsX, MainMenuButtonsY[MAINMENU_BUTTONS_SINGLEPLAYER], MainMenuButtonsZ, MainMenuButtonsTextureWidth, MainMenuButtonsTextOffset, "Singleplayer", std::bind(&MainMenuState::goToSingleplayerMenu, this));
+    this->buttons[MAINMENU_BUTTONS_MULTIPLAYER] = Button(MainMenuButtonsX, MainMenuButtonsY[MAINMENU_BUTTONS_MULTIPLAYER], MainMenuButtonsZ, MainMenuButtonsTextureWidth, MainMenuButtonsTextOffset, "Multiplayer", std::bind(&MainMenuState::goToMultiplayerMenu, this));
+    this->buttons[MAINMENU_BUTTONS_RULES] = Button(MainMenuButtonsX, MainMenuButtonsY[MAINMENU_BUTTONS_RULES], MainMenuButtonsZ, MainMenuButtonsTextureWidth, MainMenuButtonsTextOffset, "Rules", std::bind(&MainMenuState::goToRulesMenu, this));
+    this->buttons[MAINMENU_BUTTONS_QUIT] = Button(MainMenuButtonsX, MainMenuButtonsY[MAINMENU_BUTTONS_QUIT], MainMenuButtonsZ, MainMenuButtonsTextureWidth, MainMenuButtonsTextOffset, "Quit", std::bind(&MainMenuState::quit, this));
 
     this->selectedButton = MainMenuMinSelected;
 }
@@ -74,16 +77,17 @@ void MainMenuState::update()
 
 void MainMenuState::draw()
 {
-    for(auto& button : this->buttons)
+    for(size_t i = 0; i < this->buttons.size(); i++)
     {
-        button.draw();
+        this->buttons[i].draw();
+        if(i == static_cast<size_t>(this->selectedButton))
+            this->buttons[i].drawOverlay();
     }
-    C2D_DrawImageAt(C2D_SpriteSheetGetImage(spritesheet, sprites_button_overlay_idx), MainMenuButtonsX, MainMenuButtonsY[this->selectedButton], 0.6f);
 }
 
 void MainMenuState::goToSingleplayerMenu()
 {
-    this->nextState = new PlayingState(1, nullptr, 0);
+    this->nextState = new PlayingState(1, 0);
 }
 
 void MainMenuState::goToMultiplayerMenu()
