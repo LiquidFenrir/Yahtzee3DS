@@ -110,9 +110,16 @@ std::vector<std::string> Room::getPlayerNames()
 
 u8 Room::getPlayerCount()
 {
-    udsConnectionStatus constatus;
-	udsGetConnectionStatus(&constatus);
-    return constatus.total_nodes;
+    if(this->server)
+    {
+        udsConnectionStatus constatus;
+        udsGetConnectionStatus(&constatus);
+        return constatus.total_nodes;
+    }
+    else
+    {
+        return this->network.total_nodes;
+    }
 }
 
 bool Room::everyoneReady()
