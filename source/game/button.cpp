@@ -52,5 +52,5 @@ void Button::drawOverlay()
 
 bool Button::isPressed()
 {
-    return kDown & KEY_TOUCH && (touch.px >= this->x && touch.px <= this->x+240 && touch.py >= this->y && touch.py <= this->y+40);
+    return kDown & KEY_TOUCH && (touch.px >= this->x && touch.px <= this->x+this->textureWidth && touch.py >= this->y && touch.py <= this->y+40);
 }
