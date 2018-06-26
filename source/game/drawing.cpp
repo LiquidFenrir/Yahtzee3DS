@@ -20,7 +20,7 @@ void drawBottomField()
         C2D_DrawImageAt(C2D_SpriteSheetGetImage(spritesheet, sprites_border_top_down_idx), 0, start+i*32, 0.2f, nullptr, -1.0f, 1.0f);
         C2D_DrawImageAt(C2D_SpriteSheetGetImage(spritesheet, sprites_border_top_down_idx), 320-start, start+i*32, 0.2f, nullptr, 1.0f, 1.0f);
     }
-    
+
     C2D_DrawImageAt(C2D_SpriteSheetGetImage(spritesheet, sprites_corner_idx), 0, 0, 0.3f, nullptr, -1.0f, -1.0f);
     C2D_DrawImageAt(C2D_SpriteSheetGetImage(spritesheet, sprites_corner_idx), 320-start, 0, 0.3f, nullptr, 1.0f, -1.0f);
     C2D_DrawImageAt(C2D_SpriteSheetGetImage(spritesheet, sprites_corner_idx), 0, 240-start, 0.3f, nullptr, -1.0f, 1.0f);

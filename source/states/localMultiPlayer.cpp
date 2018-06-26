@@ -85,7 +85,7 @@ void LocalMultiplayerState::update()
             }
         }
     }
-    
+
     // Need to double tap the dice in less than 0.2 seconds
     if(this->diceTouched)
     {

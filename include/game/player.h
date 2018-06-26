@@ -70,6 +70,6 @@ class Player
 
         std::array<bool, COMBO_AMOUNT> completedCombos;
         std::array<bool, COMBO_AMOUNT> failedCombos;
-        
+
         std::string name;
 };
