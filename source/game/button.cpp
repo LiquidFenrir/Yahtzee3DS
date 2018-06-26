@@ -37,8 +37,8 @@ void Button::draw()
         C2D_DrawImageAt(C2D_SpriteSheetGetImage(spritesheet, sprites_button_body_idx), x, this->y, this->z);
     C2D_DrawImageAt(C2D_SpriteSheetGetImage(spritesheet, sprites_button_end_idx), this->x, this->y, this->z+0.01f);
     C2D_DrawImageAt(C2D_SpriteSheetGetImage(spritesheet, sprites_button_end_idx), endx, this->y, this->z+0.01f, nullptr, -1.0f, 1.0f);
-    
-    C2D_DrawText(&text, C2D_WithColor | C2D_AtBaseline, offset, this->y+this->height+2, this->z+0.02f, textScale, textScale, textColor);
+
+    C2D_DrawText(&text, C2D_WithColor | C2D_AtBaseline, offset, this->y+this->height+3, this->z+0.02f, textScale, textScale, textColor);
 }
 
 void Button::drawOverlay()
