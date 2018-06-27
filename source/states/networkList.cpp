@@ -79,7 +79,7 @@ void NetworkListState::update()
         {
             this->selectedButton = refreshButtonID;
         }
-        else if(kDown & KEY_UP)
+        else if(kDown & KEY_UP && this->rooms.size() != 0)
         {
             this->mode = NETWORK_LIST_SELECT_ROOM;
         }

@@ -126,8 +126,7 @@ void WaitingForPlayersState::draw()
     }
     else
     {
-        C2D_Text readyText, roomText;
-
+        C2D_Text readyText;
         C2D_TextParse(&readyText, dynamicBuf, "Ready");
         C2D_TextOptimize(&readyText);
         float readyX = 220;
