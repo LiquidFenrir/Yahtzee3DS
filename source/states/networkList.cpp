@@ -15,7 +15,7 @@ NetworkListState::NetworkListState()
     DEBUG("NetworkListState::NetworkListState\n");
     this->buttons[NETWORK_LIST_REFRESH] = Button(168, NetworkListButtonsY, NetworkListButtonsZ, NetworkListButtonsTextureWidth, 68, "Refresh", std::bind(&NetworkListState::refreshList, this));
     this->buttons[NETWORK_LIST_BACK] = Button(32, NetworkListButtonsY, NetworkListButtonsZ, NetworkListButtonsTextureWidth, -66, "Back", std::bind(&NetworkListState::goBack, this));
-    for(int i = 0; i < PlayingComboViewLinesPerScreen; i++)
+    for(int i = 0; i < NetworkListRoomsPerScreen; i++)
     {
         this->joinButtons[i] = Button(NetworkListRoomSelectButtonX, NetworkListRoomSelectButtonYStart+i*40, NetworkListButtonsZ, NetworkListRoomSelectButtonTextureWidth, NetworkListRoomSelectButtonTextOffset, "Join", std::bind(&NetworkListState::joinRoom, this, i));
     }
@@ -59,6 +59,12 @@ void NetworkListState::update()
         }
     }
 
+    for(auto& joinButton : this->joinButtons)
+    {
+        if(joinButton.isPressed())
+            joinButton.action();
+    }
+
     if(this->mode == NETWORK_LIST_SELECT_BUTTON)
     {
         if(kDown & KEY_A)
@@ -73,15 +79,14 @@ void NetworkListState::update()
         {
             this->selectedButton = refreshButtonID;
         }
+        else if(kDown & KEY_UP)
+        {
+            this->mode = NETWORK_LIST_SELECT_ROOM;
+        }
     }
     else if(this->mode == NETWORK_LIST_SELECT_ROOM)
     {
-        if(kDown & KEY_A)
-        {
-            this->nextState = new WaitingForPlayersState(this->rooms[this->selectedRoom]->getPlayerCount(), this->rooms[this->selectedRoom]);
-            this->rooms[this->selectedRoom]->join();
-        }
-        else if(kDown & KEY_LEFT)
+        if(kDown & KEY_LEFT)
         {
             this->selectedButton = backButtonID;
             this->mode = NETWORK_LIST_SELECT_BUTTON;
@@ -90,6 +95,44 @@ void NetworkListState::update()
         {
             this->selectedButton = refreshButtonID;
             this->mode = NETWORK_LIST_SELECT_BUTTON;
+        }
+        else if(this->rooms.size() != 0)
+        {
+            int MaxRoom = static_cast<int>(this->rooms.size()-1);
+            int MinRoom = 0;
+            int MaxScroll = this->rooms.size()-NetworkListRoomsPerScreen;
+            int MinScroll = 0;
+            if(kDown & KEY_A)
+            {
+                this->joinSelectedRoom();
+            }
+            else if(kDown & KEY_DOWN)
+            {
+
+                this->selectedRoom++;
+                if(this->selectedRoom > MaxRoom)
+                    this->selectedRoom = MaxRoom;
+
+                if(this->roomsScroll+this->selectedRoom >= NetworkListRoomsPerScreen && this->selectedRoom == this->roomsScroll+NetworkListRoomsPerScreen)
+                {
+                    this->roomsScroll++;
+                    if(this->roomsScroll > MaxScroll)
+                        this->roomsScroll = MaxScroll;
+                }
+            }
+            else if(kDown & KEY_UP)
+            {
+                this->selectedRoom--;
+                if(this->selectedRoom < MinRoom)
+                    this->selectedRoom = MinRoom;
+
+                if(this->roomsScroll > MinScroll && this->selectedRoom == this->roomsScroll-1)
+                {
+                    this->roomsScroll--;
+                    if(this->roomsScroll < MinScroll)
+                        this->roomsScroll = MinScroll;
+                }
+            }
         }
     }
 
@@ -102,6 +145,11 @@ void NetworkListState::update()
 void NetworkListState::draw()
 {
     static float textScale = 0.6f;
+    C2D_Text availableRooms;
+    C2D_TextParse(&availableRooms, dynamicBuf, "Available rooms:");
+    C2D_TextOptimize(&availableRooms);
+    C2D_DrawText(&availableRooms, C2D_WithColor, 24, 24, 0.4f, textScale, textScale, textColor);
+
     for(int i = this->roomsScroll; i < this->roomsScroll+NetworkListRoomsPerScreen; i++)
     {
         if(static_cast<size_t>(i) >= this->rooms.size())
@@ -117,8 +165,11 @@ void NetworkListState::draw()
         snprintf(roomNameAndPlayers, 127, "%s %d/%d", roomName.c_str(), roomPlayers, NetworkMaxPlayerCount);
         C2D_TextParse(&text, dynamicBuf, roomNameAndPlayers);
         C2D_TextOptimize(&text);
-        u32 color = this->mode == NETWORK_LIST_SELECT_ROOM && i == this->selectedRoom ? failedTextColor : textColor;
-        C2D_DrawText(&text, C2D_WithColor, 24, y, 0.4f, textScale, textScale, color);
+        C2D_DrawText(&text, C2D_WithColor, 24, y, 0.4f, textScale, textScale, textColor);
+
+        this->joinButtons[cleanI].draw();
+        if(this->mode == NETWORK_LIST_SELECT_ROOM && i == this->selectedRoom)
+            this->joinButtons[cleanI].drawOverlay();
     }
 
     int backButtonID = static_cast<int>(NETWORK_LIST_BACK);
@@ -136,9 +187,14 @@ void NetworkListState::draw()
 
 void NetworkListState::joinRoom(int i)
 {
-    int selected = i;
-    // this->nextState = new WaitingForPlayersState(this->rooms[selected]->getPlayerCount(), this->rooms[selected]);
-    // this->rooms[selected]->join();
+    if(static_cast<size_t>(i) >= this->rooms.size())
+        return;
+
+    int selected = i+this->roomsScroll;
+    if(this->selectedRoom == selected)
+        this->joinSelectedRoom();
+    else
+        this->selectedRoom = selected;
 }
 
 void NetworkListState::refreshList()
@@ -157,4 +213,10 @@ void NetworkListState::refreshList()
 void NetworkListState::goBack()
 {
     this->nextState = new NetworkMultiplayerState;
+}
+
+void NetworkListState::joinSelectedRoom()
+{
+    this->nextState = new WaitingForPlayersState(this->rooms[this->selectedRoom]->getPlayerCount(), this->rooms[this->selectedRoom]);
+    this->rooms[this->selectedRoom]->join();
 }

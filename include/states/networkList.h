@@ -4,7 +4,7 @@
 #include "game/button.h"
 #include "game/network.h"
 
-constexpr int NetworkListRoomsPerScreen = 4;
+constexpr int NetworkListRoomsPerScreen = 3;
 
 enum NetworkListButtons
 {
@@ -33,6 +33,7 @@ class NetworkListState : public State
         void joinRoom(int i);
         void refreshList();
         void goBack();
+        void joinSelectedRoom();
 
         std::array<Button, NETWORK_LIST_BUTTONS_AMOUNT> buttons;
         std::array<Button, NetworkListRoomsPerScreen> joinButtons;
