@@ -269,9 +269,9 @@ void PlayingState::update()
                         if(this->selectedDice > PlayingMaxSelectedDice)
                             this->selectedDice = PlayingMinSelectedDice;
                     }
-                    else if(kDown & KEY_DOWN && this->rollAmount < PlayingMaxRollAmount)
+                    else if(kDown & KEY_DOWN)
                     {
-                        this->selectionMode = SELECTION_MODE_ROLL;
+                        this->selectionMode = this->rollAmount < PlayingMaxRollAmount ? SELECTION_MODE_ROLL : SELECTION_MODE_SHOW;
                     }
                 }
                 else if(this->selectionMode == SELECTION_MODE_ROLL)
@@ -297,7 +297,7 @@ void PlayingState::update()
                     }
                     else if(kDown & KEY_UP)
                     {
-                        this->selectionMode = SELECTION_MODE_ROLL;
+                        this->selectionMode = this->rollAmount < PlayingMaxRollAmount ? SELECTION_MODE_ROLL : SELECTION_MODE_DICE;
                     }
                 }
             }
@@ -439,11 +439,14 @@ void PlayingState::draw()
     {
         this->drawDice(this->drawShakerAnimation());  // draw the unlocked dice as missing during the shaker animation 
 
-        if(this->rollAmount < PlayingMaxRollAmount && !this->shakerAnimationTime)
+        if(!this->shakerAnimationTime)
         {
-            this->rollButton.draw();
-            if(this->selectionMode == SELECTION_MODE_ROLL)
-                this->rollButton.drawOverlay();
+            if(this->rollAmount < PlayingMaxRollAmount)
+            {
+                this->rollButton.draw();
+                if(this->selectionMode == SELECTION_MODE_ROLL)
+                    this->rollButton.drawOverlay();
+            }
 
             this->showCombos.draw();
             if(this->selectionMode == SELECTION_MODE_SHOW)
