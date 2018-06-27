@@ -50,7 +50,7 @@ static const std::string comboViewName[COMBO_AMOUNT] = {
     "Chance:",
 };
 
-PlayingState::PlayingState(int playersAmount, unsigned int seed)
+PlayingState::PlayingState(int playersAmount)
 {
     DEBUG("PlayingState::PlayingState\n");
     DEBUG("Playing with %i players, single console\n", playersAmount);
@@ -73,20 +73,21 @@ PlayingState::PlayingState(int playersAmount, unsigned int seed)
     this->comboViewScroll = PlayingComboViewMinScroll;
     this->comboSelection = PlayingComboViewMinSelection;
     this->gameComplete = false;
+    this->someoneLeft = false;
 
-    srand(seed);
+    srand(time(NULL));
     this->startNewTurn();
 }
 
-PlayingState::PlayingState(int playerID, std::shared_ptr<Room>& room, unsigned int seed)
+PlayingState::PlayingState(int playerID, std::shared_ptr<Room>& room)
 {
     DEBUG("PlayingState::PlayingState\n");
 
     std::vector<std::string> names = room->getPlayerNames();
-    int playersAmount = room->getPlayerCount();
-    
+    this->playersAmount = room->getPlayerCount();
+
     DEBUG("Playing with %i players, multiple consoles\n", playersAmount);
-    for(int i = 0; i < playersAmount; i++)
+    for(int i = 0; i < this->playersAmount; i++)
     {
         std::string playerName = names[i];
         DEBUG("Player %i has name %s\n", i+1, playerName.c_str());
@@ -107,23 +108,20 @@ PlayingState::PlayingState(int playerID, std::shared_ptr<Room>& room, unsigned i
     this->comboViewScroll = PlayingComboViewMinScroll;
     this->comboSelection = PlayingComboViewMinSelection;
     this->gameComplete = false;
+    this->someoneLeft = false;
 
-    srand(seed);
+    srand(time(NULL));
     this->startNewTurn();
 }
 
 PlayingState::~PlayingState()
 {
     DEBUG("PlayingState::~PlayingState\n");
-    if(this->getKeys)
-    {
-        closeNetworkConnection();
-    }
 }
 
 void PlayingState::update()
 {
-    if(this->gameComplete)
+    if(this->gameComplete || (this->playerID != -1 && this->someoneLeft))
     {
         if(kDown & KEY_B)
         {
@@ -134,10 +132,16 @@ void PlayingState::update()
     {
         if(this->playerID != -1)
         {
+            if(this->room->getPlayerCount() != this->playersAmount)
+            {
+                this->someoneLeft = true;
+                return;
+            }
+
             if(this->currentPlayer == static_cast<size_t>(this->playerID))
-                sendLocalKeys();
+                this->room->sendLocalKeys();
             else
-                getRemotePlayerKeys();
+                this->room->getRemotePlayerKeys();
         }
 
         if(this->selectionMode == SELECTION_MODE_COMBO)
@@ -340,6 +344,28 @@ void PlayingState::draw()
         C2D_DrawText(&pointsText, C2D_WithColor, offset, y, 0.5f, textScale, textScale, textColor);
         y += height*2 + 5;
  
+        C2D_TextGetDimensions(&pressB, textScale, textScale, &width, nullptr);
+        offset = (320/2 - width/2);
+        C2D_DrawText(&pressB, C2D_WithColor, offset, y, 0.5f, textScale, textScale, textColor);
+    }
+    else if(playerID != -1 && this->someoneLeft)
+    {
+        C2D_Text someoneLeft, pressB;
+        C2D_TextParse(&someoneLeft, dynamicBuf, "Someone left the game!");
+        C2D_TextOptimize(&someoneLeft);
+        C2D_TextParse(&pressB, dynamicBuf, "Press \uE001 to go back.");
+        C2D_TextOptimize(&pressB);
+
+        float y = 80;
+        float width = 0;
+        float offset = 0;
+
+        C2D_TextGetDimensions(&someoneLeft, 0.8f, 0.8f, &width, nullptr);
+        offset = (320/2 - width/2);
+        C2D_DrawText(&someoneLeft, C2D_WithColor, offset, y, 0.5f, 0.8f, 0.8f, textColor);
+
+        y += 40;
+
         C2D_TextGetDimensions(&pressB, textScale, textScale, &width, nullptr);
         offset = (320/2 - width/2);
         C2D_DrawText(&pressB, C2D_WithColor, offset, y, 0.5f, textScale, textScale, textColor);

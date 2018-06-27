@@ -32,5 +32,6 @@ class WaitingForPlayersState : public State
         std::shared_ptr<Room> room;
         int playerID;
         int selectedButton;
+        bool ownerLeft;
         bool ready;
 };

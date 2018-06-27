@@ -42,6 +42,7 @@ Room::Room()
         this->ready[i] = false;
 
     this->server = true;
+    this->connected = true;
 }
 
 Room::Room(udsNetworkStruct network)
@@ -52,6 +53,7 @@ Room::Room(udsNetworkStruct network)
         this->ready[i] = false;
 
     this->server = false;
+    this->connected = false;
 }
 
 Room::~Room()
@@ -77,6 +79,7 @@ void Room::join()
         else
         {
             DEBUG("Succesfully connected to the room!\n");
+            this->connected = true;
             break;
         }
     }
@@ -110,7 +113,7 @@ std::vector<std::string> Room::getPlayerNames()
 
 u8 Room::getPlayerCount()
 {
-    if(this->server)
+    if(this->connected)
     {
         udsConnectionStatus constatus;
         udsGetConnectionStatus(&constatus);
@@ -140,6 +143,76 @@ bool Room::everyoneReady()
 bool Room::isPlayerReady(size_t playerID)
 {
     return this->ready[playerID];
+}
+
+Result Room::receivePacket(NetworkPacket* packet, size_t* actualSize, u16* sender)
+{
+    return udsPullPacket(&this->bindctx, packet, sizeof(NetworkPacket), actualSize, sender);
+}
+Result Room::sendPacket(NetworkPacket packet)
+{
+    return udsSendTo(UDS_BROADCAST_NETWORKNODEID, data_channel, UDS_SENDFLAG_Default, (u8*)&packet, sizeof(NetworkPacket));
+}
+
+void Room::receiveReadyPacket()
+{
+    NetworkPacket packet;
+    size_t actualSize = 0;
+    u16 sender;
+
+    Result ret = this->receivePacket(&packet, &actualSize, &sender);
+    if(R_FAILED(ret))
+        DEBUG("udsPullPacket() returned %.8lx\n", ret);
+
+    if(actualSize == sizeof(NetworkPacket) && packet.type == NETWORK_PACKET_READY)
+    {
+        this->ready[sender-1] = packet.ready;
+    }
+}
+void Room::sendReadyPacket(size_t playerID, bool ready)
+{
+    this->ready[playerID] = ready;
+
+    NetworkPacket packet;
+    packet.type = NETWORK_PACKET_READY;
+    packet.ready = ready;
+
+    Result ret = this->sendPacket(packet);
+    if(R_FAILED(ret))
+        DEBUG("udsSendTo() returned %.8lx\n", ret);
+}
+
+void Room::getRemotePlayerKeys()
+{
+    NetworkPacket packet;
+    size_t actualSize = 0;
+    u16 sender;
+
+    Result ret = this->receivePacket(&packet, &actualSize, &sender);
+    if(R_FAILED(ret))
+        DEBUG("udsPullPacket() returned %.8lx\n", ret);
+
+    if(actualSize == sizeof(NetworkPacket) && packet.type == NETWORK_PACKET_KEYS)
+    {
+        kDown = packet.kDown;
+        kHeld = packet.kHeld;
+        kUp = packet.kUp;
+        touch = packet.touch;
+    }
+}
+
+void Room::sendLocalKeys()
+{
+    NetworkPacket packet;
+    packet.type = NETWORK_PACKET_KEYS;
+    packet.kDown = kDown;
+    packet.kHeld = kHeld;
+    packet.kUp = kUp;
+    packet.touch = touch;
+
+    Result ret = this->sendPacket(packet);
+    if(R_FAILED(ret))
+        DEBUG("udsSendTo() returned %.8lx\n", ret);
 }
 
 std::vector<std::shared_ptr<Room>> getRoomList()

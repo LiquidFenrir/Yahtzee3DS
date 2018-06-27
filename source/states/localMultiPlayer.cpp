@@ -30,7 +30,7 @@ void LocalMultiplayerState::update()
     {
         startPlaying:
         DEBUG("Start playing local multiplayer, players: %i\n", this->playersAmount);
-        this->nextState = new PlayingState(this->playersAmount, 0);
+        this->nextState = new PlayingState(this->playersAmount);
     }
     else if(kDown & KEY_DOWN)
     {

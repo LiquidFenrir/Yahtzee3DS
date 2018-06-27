@@ -87,7 +87,7 @@ void MainMenuState::draw()
 
 void MainMenuState::goToSingleplayerMenu()
 {
-    this->nextState = new PlayingState(1, 0);
+    this->nextState = new PlayingState(1);
 }
 
 void MainMenuState::goToMultiplayerMenu()

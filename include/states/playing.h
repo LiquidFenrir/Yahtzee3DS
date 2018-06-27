@@ -4,7 +4,6 @@
 #include "game/player.h"
 #include "game/button.h"
 
-typedef void(*getKeysType)();
 constexpr int PlayingComboViewLinesPerScreen = 4;
 
 enum SelectionMode
@@ -18,8 +17,8 @@ enum SelectionMode
 class PlayingState : public State
 {
     public:
-        PlayingState(int playersAmount, unsigned int seed);
-        PlayingState(int playerID, std::shared_ptr<Room>& room, unsigned int seed);
+        PlayingState(int playersAmount);
+        PlayingState(int playerID, std::shared_ptr<Room>& room);
         ~PlayingState();
 
         void update();
@@ -56,7 +55,8 @@ class PlayingState : public State
 
         size_t currentPlayer;
         std::vector<Player> players;
-        getKeysType getKeys;
         int playerID;  // ID of the player on this console
         std::shared_ptr<Room> room;
+        bool someoneLeft;
+        int playersAmount;
 };
