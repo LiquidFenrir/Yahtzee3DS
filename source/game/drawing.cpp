@@ -3,6 +3,14 @@
 void drawTopBanner()
 {
     C2D_DrawImageAt(C2D_SpriteSheetGetImage(spritesheet, sprites_banner_idx), 96, 56, 0.5f);
+    C2D_Text version;
+    C2D_TextParse(&version, dynamicBuf, VERSION);
+    C2D_TextOptimize(&version);
+    static float textScale = 0.5f;
+    float width = 0;
+    C2D_TextGetDimensions(&version, textScale, textScale, &width, nullptr);
+    float x = 286 - width;
+    C2D_DrawText(&version, C2D_WithColor, x, 76, 0.5f, textScale, textScale, blackColor);
 }
 
 void drawBottomField()
