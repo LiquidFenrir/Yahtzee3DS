@@ -13,7 +13,10 @@ Option:
   MediaFootPadding        : false # If true CCI files are created with padding
   EnableCrypt             : false # Enables encryption for NCCH and CIA
   EnableCompress          : true # Compresses where applicable (currently only exefs:/.code)
-  
+
+RomFs:
+  RootPath                : $(APP_ROMFS)
+
 AccessControlInfo:
   CoreVersion                   : 2
 
@@ -25,7 +28,7 @@ AccessControlInfo:
   ReleaseKernelMinor            : "46" 
 
   # ExtData
-  UseExtSaveData                : false # enables ExtData       
+  UseExtSaveData                : false # enables ExtData
   #ExtSaveDataId                : 0x300 # only set this when the ID is different to the UniqueId
 
   # FS:USER Archive Access Permissions
